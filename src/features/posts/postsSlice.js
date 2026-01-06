@@ -11,7 +11,9 @@ import { db, storage } from "../../firebase";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 // const BASE_URL = "https://12de56fe-6066-4f67-9c97-3b39be24af16-00-31a0nkx32vpgv.pike.replit.dev/";
-
+export const updatePost = createAsyncThunk(
+  'posts/updatePost', 
+  async ({ userId, postId, newPostContent, newFile }) => { })
 export const savePost = createAsyncThunk(
   'posts/savePost', 
   async ({ userId, postId, newPostContent, newFile }) => {
@@ -19,13 +21,13 @@ export const savePost = createAsyncThunk(
       let newImageUrl;
       if (newFile) {
         const imageRef = ref(storage, `posts/${newFile.name}`);
-        const response = await uploadBytes(imageRef, newfile);
+        const response = await uploadBytes(imageRef, newFile);
         newImageUrl = await getDownloadURL(response.ref);
       }
 
       const postsRef = doc(db, `users/${userId}/posts/${postId}`);
 
-      const postSnap = await getDoc(postRef);
+      const postSnap = await getDoc(postsRef);
       if (postSnap.exists()) {
         const postData = postSnap.data();
         const updatedData = {
@@ -34,7 +36,7 @@ export const savePost = createAsyncThunk(
           imageUrl: newImageUrl || postData.imageUrl,
         };
 
-        await updateDoc(postRef, updatedData);
+        await updateDoc(postsRef, updatedData);
         const updatedPost = { id: postId, ...updatedData };
         return updatedPost;
       } else {
@@ -44,16 +46,7 @@ export const savePost = createAsyncThunk(
       console.error(error);
       throw error;
     }
-    .addCase(updatePost.fulfilled, (state, action) => {
-      const updatedPost = action.payload;
-      const postIndex = state.posts.findIndex(
-        (post) => post.id === updatedPost.id
-      );
-      if (postIndex !== -1) {
-        state.posts[postIndex] = updatedPost;
-      }
-    });
-  };
+  }
 );
 
 export const fetchPostsByUser = createAsyncThunk('posts/fetchPostsByUser',
@@ -125,6 +118,16 @@ const postsSlice = createSlice({
     .addCase(fetchPostsByUser.fulfilled, (state, action) => {
       state.loading = false;
       state.posts = action.payload;
+    })
+
+    .addCase(updatePost.fulfilled, (state, action) => {
+      const updatedPost = action.payload;
+      const postIndex = state.posts.findIndex(
+        (post) => post.id === updatedPost.id
+      );
+      if (postIndex !== -1) {
+        state.posts[postIndex] = updatedPost;
+      }
     })
 
     .addCase(savePost.fulfilled, (state, action) => {
