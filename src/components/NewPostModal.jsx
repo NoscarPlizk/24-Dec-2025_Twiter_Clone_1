@@ -1,36 +1,28 @@
 import axios from "axios";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Button, Form, Modal } from "react-bootstrap";
-import { jwtDecode } from "jwt-decode";
 import { useDispatch } from "react-redux";
+import { jwtDecode } from "jwt-decode";
+import { AuthContext } from "./AuthProvider";
 import { savePost } from "../features/posts/postsSlice";
 
 export default function NewPostModal({ show, handleClose }) {
   const [postContent, setPostContent] = useState("");
+  const [file, setFile] = useState(null);
   const dispatch = useDispatch();
+  const { currentUser } = useContext(AuthContext);
+  const userId = currentUser.uid;
 
   const handleSave = () => {
-
-    
-    const token = localStorage.getItem("authToken");
-    const decode = jwtDecode(token);
-    const userId = decode.id
-
-    const data = {
-      title: "Post Title",
-      content: postContent,
-      user_id: userId,
-    };
-
-    axios.post("https://f92bb0f6-ffb4-4823-a9e9-7395f774ed9c-00-vzoe863hxodo.sisko.replit.dev/posts", data)
-    .then((response) => {
-      console.log("success:", response.data);
-      handleClose();
-    })
-    .catch((error) => {
-      console.error("Error", error);
-    });
+    dispatch(savePost({ userId, postContent, file }));
+    handleClose();
+    setPostContent("");
+    setFile(null);
   }
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
 
   return (
     <>
@@ -45,6 +37,8 @@ export default function NewPostModal({ show, handleClose }) {
                 rows={3}
                 onChange={(e) => setPostContent(e.target.value)}
               />
+              <br />
+              <Form.Control type='file' onChange={handleFileChange} />
             </Form.Group>
           </Form>
         </Modal.Body>

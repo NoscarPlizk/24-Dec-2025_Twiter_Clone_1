@@ -1,40 +1,55 @@
 import { Row, Col, Image, Button, Modal, Form } from 'react-bootstrap';
-import { useState, useEffect } from 'react';
-import axios from "axios";
-import useLocalStorage from 'use-local-storage';
+import { useState, useEffect, useContext } from 'react';
+// import axios from "axios";
+// import useLocalStorage from 'use-local-storage';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from "../components/AuthProvider";
+import {
+  createUserWithEmailAndPassword,
+  getAuth,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 
 export default function AuthPage() {
   const loginImage = "https://sig1.co/img-twitter-1";
-  const url = 'https://12de56fe-6066-4f67-9c97-3b39be24af16-00-31a0nkx32vpgv.pike.replit.dev';
+  // const url = 'https://12de56fe-6066-4f67-9c97-3b39be24af16-00-31a0nkx32vpgv.pike.replit.dev';
 
   const [modalShow, setModalShow] = useState(null);
   const handleShowSignUp = () => setModalShow("SignUp");
   const handleShowLogin = () => setModalShow("Login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [authToken, setAuthToken] = useLocalStorage("authToken", "");
+  // const [authToken, setAuthToken] = useLocalStorage("authToken", "");
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (authToken) {
-      navigate("/profile");
-    }
-  }, [authToken, navigate]);
+  const auth = getAuth();
+  const { currentUser } = useContext(AuthContext); 
 
-  const handleLogin = async (e) => {
+  useEffect(() => {
+    if (currentUser) navigate('/profile')
+  }, [currentUser, navigate]);
+
+
+  const handleSignUp = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`${url}/login`, { username, password });
-      if (res.data && res.data.auth === true && res.data.token) {
-        setAuthToken(res.data.token);
-        console.log("Login was successful, token saved");
-      }
+      const res = await createUserWithEmailAndPassword(auth, username, password);
+      console.log(res.user);
     } catch (error) {
       console.error(error);
     }
   };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      await signInWithEmailAndPassword(auth, username, password);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleClose = () => setModalShow(null);
 
   return (
